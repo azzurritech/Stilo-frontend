@@ -1,0 +1,70 @@
+{
+  "project_info": {
+    "project_number": "22091205567",
+    "project_id": "wanna-play-app-cb189",
+    "storage_bucket": "wanna-play-app-cb189.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:22091205567:android:50eba6e8278a627e612f0a",
+        "android_client_info": {
+          "package_name": "com.azzurri.flutter_wanna_play_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "22091205567-erg5k1699jvpt1tsj5kr9fvkup978pp6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.azzurri.flutter_wanna_play_app",
+            "certificate_hash": "ebecb10693f57e1fe95bbc2aaa43ebcb7a831170"
+          }
+        },
+        {
+          "client_id": "22091205567-j91l4por0pejgltm4n2m6kprvmmgic2e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.azzurri.flutter_wanna_play_app",
+            "certificate_hash": "fa0dd58b514ad6f93c0c7c991497c70d01ee1b90"
+          }
+        },
+        {
+          "client_id": "22091205567-psom24p2p8cbuqn3so75vne3ccfnn1bc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.azzurri.flutter_wanna_play_app",
+            "certificate_hash": "b039b75cd4900ec1a5cab1c263373e41d69b4fcd"
+          }
+        },
+        {
+          "client_id": "22091205567-rg4h74qdi4jing645roht8sf2g0iqmbl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUgXiyiNGk_x8ZqlnMbSjh1WYQZJqnrE8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "22091205567-39109b8qjtt87p58pc1i3aoqeq708uc4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "22091205567-h6d3i4bef984jtlphtfh13j5g1eackr1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterWannaPlayApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
