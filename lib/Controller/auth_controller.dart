@@ -438,7 +438,7 @@ class Auth {
             if (data.containsKey("gender") || data.containsKey("birthday")) {
               final gender = data['gender'];
               final birth = data['birthday'];
-              Map<String, dynamic> loc = data['location'];
+              // Map<String, dynamic> loc = data['location'];
 
               if (birth != null) {
                 DateTime date =
@@ -472,7 +472,7 @@ class Auth {
                 BaseHelper.showSnackBar(context, "failed to retrieve gender");
                 return null;
               }
-              FirebaseMethod.updateData({"city": loc['name']});
+              FirebaseMethod.updateData({"city": "lahore"});
             } else {
               EasyLoading.dismiss();
               BaseHelper.showSnackBar(context, "Choose your orignal account");

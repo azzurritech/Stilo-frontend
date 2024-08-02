@@ -1,4 +1,9 @@
 {
     "dart.renameFilesWithClasses": "prompt",
-    "dart.flutterSdkPath": "~/Downloads/flutter"
+    "dart.flutterSdkPath": "~/Downloads/flutter",
+    "workbench.colorCustomizations": {
+        "[Material Theme Darker]": {
+            "statusBar.debuggingBackground": "#212121"
+        }
+    }
 }

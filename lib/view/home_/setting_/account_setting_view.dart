@@ -799,6 +799,31 @@ class _AccountSettingViewState extends State<AccountSettingView> {
                                         dob: dobController.text);
                                   }
                                 }
+                                AccountSettingController.updateUserData(context,
+                                    federationLinkAccountController:
+                                        federationLinkAccountController.text,
+                                    federationRankAccount:
+                                        AccountSettingController
+                                            .federationRankAccount,
+                                    gender: AccountSettingController.gender,
+                                    imageFile:
+                                        AccountSettingController.imageFile,
+                                    nameController: nameController.text,
+                                    passwordController: passwordController.text,
+                                    rankingRadioAccount:
+                                        AccountSettingController
+                                            .rankingRadioAccount,
+                                    roleRadioAccount: AccountSettingController
+                                        .roleRadioAccount,
+                                    address: addressController.text,
+                                    campList:
+                                        AccountSettingController.campiItemAdded,
+                                    email: emailController.text
+                                        .toLowerCase()
+                                        .trim(),
+                                    seviziList: AccountSettingController
+                                        .seviziItemAdded,
+                                    dob: dobController.text);
                               } else if (emailController.text !=
                                       BaseHelper.user?.email ||
                                   AccountSettingController.imageFile != '' ||

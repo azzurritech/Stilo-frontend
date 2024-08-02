@@ -7,14 +7,14 @@ class UserModel {
   final String email;
   final String password;
   final String? phoneNumber;
-  final String? dob;
-  final String city;
+  String? dob;
+  String city;
 
-  final String? gender;
+  String? gender;
   final String? isFederationRanking;
   final String? federationRanking;
   final String? federationLink;
-  final String profilePhoto;
+  String profilePhoto;
   final String? isKeepLeaderboard;
   final List? invitationSendTo;
   final List? friends;
