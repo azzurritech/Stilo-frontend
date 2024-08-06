@@ -41,7 +41,6 @@ class AccountSettingView extends StatefulWidget {
 class _AccountSettingViewState extends State<AccountSettingView> {
   ValueNotifier isLoading = ValueNotifier(false);
   late TextEditingController federationLinkAccountController;
-
   late TextEditingController nameController;
   late TextEditingController emailController;
   late TextEditingController passwordController;
@@ -49,8 +48,21 @@ class _AccountSettingViewState extends State<AccountSettingView> {
   late TextEditingController cityController;
   late TextEditingController addressController;
   late GlobalKey<FormState> formKey;
+  DateTime initialDate = DateTime.now();
+
+  // Add FocusNodes for each TextField
+  final FocusNode nameFocusNode = FocusNode();
+  final FocusNode emailFocusNode = FocusNode();
+  final FocusNode passwordFocusNode = FocusNode();
+  final FocusNode dobFocusNode = FocusNode();
+  final FocusNode cityFocusNode = FocusNode();
+  final FocusNode addressFocusNode = FocusNode();
+  final FocusNode linkFocusNode = FocusNode();
+
   @override
   void initState() {
+    super.initState();
+
     formKey = GlobalKey<FormState>();
     isLoading.value = true;
     federationLinkAccountController = TextEditingController();
@@ -61,20 +73,41 @@ class _AccountSettingViewState extends State<AccountSettingView> {
     cityController = TextEditingController();
     addressController = TextEditingController();
 
-    if (widget.willPopValue == false) {
+    if (!widget.willPopValue) {
       getLoc();
     }
     values();
-    // TODO: implement initState
-    super.initState();
+  }
+
+  @override
+  void dispose() {
+    federationLinkAccountController.dispose();
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    dobController.dispose();
+    cityController.dispose();
+    addressController.dispose();
+
+    // Dispose FocusNodes
+    nameFocusNode.dispose();
+    emailFocusNode.dispose();
+    passwordFocusNode.dispose();
+    dobFocusNode.dispose();
+    cityFocusNode.dispose();
+    addressFocusNode.dispose();
+
+    super.dispose();
   }
 
   Future<bool?> getLoc() async {
     await LocPermission.handleLocationPermission(context).then((value) {
       if (value == true) {
         Geolocator.getCurrentPosition().then((event) async {
+          if (!mounted) return; // Check if the widget is still mounted
           await HomePageController.getAddressFromLatLng(context, event)
               .then((value) {
+            if (!mounted) return; // Check if the widget is still mounted
             if (value == true) {
               cityController.text = BaseHelper.user?.city ?? "";
               setState(() {});
@@ -86,31 +119,17 @@ class _AccountSettingViewState extends State<AccountSettingView> {
     return null;
   }
 
-  @override
-  void dispose() {
-    federationLinkAccountController.dispose();
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    dobController.dispose();
-    cityController.dispose();
-
-    addressController.dispose();
-    // TODO: implement dispose
-    super.dispose();
-  }
-
   values() async {
-    if (widget.willPopValue == true) {
+    if (widget.willPopValue) {
       await FirebaseMethod.getUserData();
     }
+    if (!mounted) return; // Check if the widget is still mounted
     AccountSettingController.imageFile =
         BaseHelper.currentUser?.photoURL.toString() ?? "";
     AccountSettingController.seviziItemAdded.clear();
     AccountSettingController.campiItemAdded.clear();
     AccountSettingController.seviziItemAdded
         .addAll(BaseHelper.user?.serviz?.toList() ?? []);
-
     AccountSettingController.campiItemAdded
         .addAll(BaseHelper.user?.campi?.toList() ?? []);
     AccountSettingController.gender = BaseHelper.user?.gender ?? '';
@@ -131,7 +150,15 @@ class _AccountSettingViewState extends State<AccountSettingView> {
     isLoading.value = false;
   }
 
-  DateTime initialDate = DateTime.now();
+  bool _canEditFields() {
+    final providerId =
+        BaseHelper.currentUser?.providerData.first.providerId.toString();
+    // Allow editing for traditional email sign-up users
+    return providerId != 'facebook.com' &&
+        providerId != 'google.com' &&
+        providerId != 'apple.com';
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
@@ -141,19 +168,23 @@ class _AccountSettingViewState extends State<AccountSettingView> {
       onWillPop: () async {
         BaseHelper.hideKeypad(context);
 
-        if (widget.willPopValue == true &&
-            AccountSettingController.isEdit == true) {
+        if (widget.willPopValue && AccountSettingController.isEdit) {
           var shouldPop = await showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (context) => customDialogBox(context,
-                      title: context.loc.yourChangesWillBeLost, onCancel: () {
-                    Navigator.of(context).pop(false);
-                  }, onOk: () {
-                    AccountSettingController.isEdit = false;
+            barrierDismissible: false,
+            context: context,
+            builder: (context) => customDialogBox(
+              context,
+              title: context.loc.yourChangesWillBeLost,
+              onCancel: () {
+                Navigator.of(context).pop(false);
+              },
+              onOk: () {
+                AccountSettingController.isEdit = false;
 
-                    Navigator.of(context).pop(true);
-                  }));
+                Navigator.of(context).pop(true);
+              },
+            ),
+          );
           return Future.value(shouldPop);
         } else {
           return Future.value(widget.willPopValue);
@@ -162,208 +193,253 @@ class _AccountSettingViewState extends State<AccountSettingView> {
       child: Scaffold(
         appBar: AppBarWidget(title: context.loc.profileSetting),
         body: ValueListenableBuilder(
-            valueListenable: isLoading,
-            builder: (_, value, child) {
-              return value == true
-                  ? const Center(
-                      child: CircularProgressIndicator.adaptive(),
-                    )
-                  : ListView(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.only(
-                          bottom: 30, left: 30, right: 30, top: 20),
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            InkWell(
-                                onTap: () {
-                                  AccountSettingController.isEdit = true;
+          valueListenable: isLoading,
+          builder: (_, value, child) {
+            return value
+                ? const Center(
+                    child: CircularProgressIndicator.adaptive(),
+                  )
+                : ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.only(
+                        bottom: 30, left: 30, right: 30, top: 20),
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          InkWell(
+                              onTap: () {
+                                AccountSettingController.isEdit = true;
 
-                                  setState(() {});
-                                  AccountSettingController.isEdit == true
-                                      ? BaseHelper.showSnackBar(
-                                          context, 'You can now edit  ')
-                                      : null;
-                                },
-                                child: Text(
-                                  AccountSettingController.isEdit == false
-                                      ? "Edit"
-                                      : '',
-                                  style: subTitle16BlackStyle,
-                                ))
-                          ],
-                        ),
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CustomCircleAvatar(
-                                radius: 60,
-                                imageUrl: AccountSettingController.imageFile),
-                            if (AccountSettingController.isEdit == true)
-                              Positioned(
-                                right: width * 0.27,
-                                top: 80,
-                                child: Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Container(
-                                    width: 35,
-                                    decoration: BoxDecoration(
-                                        color: Colors.grey.withOpacity(0.3),
-                                        shape: BoxShape.circle),
-                                    child: IconButton(
-                                        onPressed: () async {
-                                          String? downloadableLink;
-                                          File? imageVar =
-                                              await BaseHelper.imagePickerSheet(
-                                                  context);
+                                setState(() {});
+                                AccountSettingController.isEdit == true
+                                    ? BaseHelper.showSnackBar(
+                                        context, 'You can now edit  ')
+                                    : null;
+                              },
+                              child: Text(
+                                AccountSettingController.isEdit == false
+                                    ? "Edit"
+                                    : '',
+                                style: subTitle16BlackStyle,
+                              ))
+                        ],
+                      ),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CustomCircleAvatar(
+                              radius: 60,
+                              imageUrl: AccountSettingController.imageFile),
+                          if (AccountSettingController.isEdit == true)
+                            Positioned(
+                              right: width * 0.27,
+                              top: 80,
+                              child: Align(
+                                alignment: Alignment.bottomRight,
+                                child: Container(
+                                  width: 35,
+                                  decoration: BoxDecoration(
+                                      color: Colors.grey.withOpacity(0.3),
+                                      shape: BoxShape.circle),
+                                  child: IconButton(
+                                      onPressed: () async {
+                                        String? downloadableLink;
+                                        File? imageVar =
+                                            await BaseHelper.imagePickerSheet(
+                                                context);
 
-                                          if (imageVar != null) {
-                                            await Auth.uploadImage(
-                                              imageVar,
-                                              context,
-                                            ).then((value) {
-                                              downloadableLink = value;
-                                              setState(() {
-                                                AccountSettingController
-                                                        .imageFile =
-                                                    downloadableLink.toString();
-                                              });
+                                        if (imageVar != null) {
+                                          await Auth.uploadImage(
+                                            imageVar,
+                                            context,
+                                          ).then((value) {
+                                            downloadableLink = value;
+                                            setState(() {
+                                              AccountSettingController
+                                                      .imageFile =
+                                                  downloadableLink.toString();
                                             });
-                                          }
-                                        },
-                                        icon: const Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.grey,
-                                          size: 18,
-                                        )),
-                                  ),
+                                          });
+                                        }
+                                      },
+                                      icon: const Icon(
+                                        Icons.camera_alt,
+                                        color: Colors.grey,
+                                        size: 18,
+                                      )),
                                 ),
-                              )
-                          ],
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 20, bottom: 10),
-                          child: TextFields(
-                            readOnly: AccountSettingController.isEdit == true
-                                ? false
-                                : true,
-                            controller: nameController,
-                            text: 'Matteo Berrettini',
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: TextFields(
-                            readOnly: AccountSettingController.isEdit == true &&
-                                    BaseHelper.currentUser?.providerData.first
-                                            .providerId
-                                            .toString() !=
-                                        'facebook.com' &&
-                                    BaseHelper.currentUser?.providerData.first
-                                            .providerId
-                                            .toString() !=
-                                        'google.com' &&
-                                    BaseHelper.currentUser?.providerData.first
-                                            .providerId
-                                            .toString() !=
-                                        'apple.com'
-                                ? false
-                                : true,
-                            controller: emailController,
-                            text: 'giocatore@wannaplay.it',
-                          ),
-                        ),
-                        if (BaseHelper
-                                    .currentUser?.providerData.first.providerId
-                                    .toString() !=
-                                'google.com' &&
-                            BaseHelper
-                                    .currentUser?.providerData.first.providerId
-                                    .toString() !=
-                                'facebook.com' &&
-                            BaseHelper
-                                    .currentUser?.providerData.first.providerId
-                                    .toString() !=
-                                'apple.com')
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: TextFields(
-                              readOnly: AccountSettingController.isEdit == true
-                                  ? false
-                                  : true,
-                              controller: passwordController,
-                              text: '*************',
-                            ),
-                          ),
-                        if (AccountSettingController.roleRadioAccount !=
-                            RoleName.club)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Form(
-                              key: formKey,
-                              child: TextFields(
-                                readOnly: AccountSettingController.isEdit ==
-                                            true &&
-                                        BaseHelper.currentUser?.providerData
-                                                .first.providerId
-                                                .toString() ==
-                                            'apple.com' &&
-                                        BaseHelper.user?.dob.toString() == ""
-                                    ? false
-                                    : true,
-                                controller: dobController,
-                                validator: (p0) =>
-                                    Validators.ageValidateField(p0),
-                                onTap: AccountSettingController.isEdit ==
-                                            true &&
-                                        BaseHelper.currentUser?.providerData
-                                                .first.providerId
-                                                .toString() ==
-                                            'apple.com' &&
-                                        BaseHelper.user?.dob.toString() == ""
-                                    ? () async {
-                                        final date =
-                                            await BaseHelper.datePicker(context,
-                                                initialDate: initialDate);
-                                        if (date == null) return;
-                                        dobController.text =
-                                            DateFormat('MMM,dd,yyyy')
-                                                .format(date);
-                                        setState(() {});
-                                      }
-                                    : null,
-                                text: '24/12/1995',
                               ),
-                            ),
-                          ),
+                            )
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20, bottom: 10),
+                        child: TextFieldss(
+                          focusNode: nameFocusNode,
+                          readOnly: !_canEditFields(),
+                          controller: nameController,
+                          text: 'Matteo Berrettini',
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: TextFieldss(
+                          focusNode: emailFocusNode,
+                          readOnly: !_canEditFields(),
+                          controller: emailController,
+                          text: 'giocatore@wannaplay.it',
+                        ),
+                      ),
+                      if (BaseHelper.currentUser?.providerData.first.providerId
+                                  .toString() !=
+                              'google.com' &&
+                          BaseHelper.currentUser?.providerData.first.providerId
+                                  .toString() !=
+                              'facebook.com' &&
+                          BaseHelper.currentUser?.providerData.first.providerId
+                                  .toString() !=
+                              'apple.com')
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: TextFields(
-                            readOnly: true,
-                            controller: cityController,
-                            text: 'Milano',
+                          child: TextFieldss(
+                            focusNode: passwordFocusNode,
+                            readOnly: !_canEditFields(),
+                            controller: passwordController,
+                            text: '*************',
                           ),
                         ),
-                        if (AccountSettingController.roleRadioAccount ==
-                            RoleName.club)
-                          Column(
-                            children: [
-                              Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                  child: Theme(
-                                      data: Theme.of(context).copyWith(
-                                          dividerColor: Colors.transparent),
-                                      child: Container(
-                                        color: AppColor.textfield_color,
-                                        child: ExpansionTile(
+                      if (AccountSettingController.roleRadioAccount !=
+                          RoleName.club)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Form(
+                            key: formKey,
+                            child: TextFieldss(
+                              focusNode: dobFocusNode,
+                              readOnly: !_canEditFields(),
+                              controller: dobController,
+                              validator: (p0) =>
+                                  Validators.ageValidateField(p0),
+                              onTap: _canEditFields()
+                                  ? () async {
+                                      final date = await BaseHelper.datePicker(
+                                          context,
+                                          initialDate: initialDate);
+                                      if (date == null) return;
+                                      dobController.text =
+                                          DateFormat('MMM,dd,yyyy')
+                                              .format(date);
+                                      setState(() {});
+                                    }
+                                  : null,
+                              text: '24/12/1995',
+                            ),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: TextFieldss(
+                          focusNode: cityFocusNode,
+                          readOnly: true,
+                          controller: cityController,
+                          text: 'Milano',
+                        ),
+                      ),
+                      if (AccountSettingController.roleRadioAccount ==
+                          RoleName.club)
+                        Column(
+                          children: [
+                            Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                child: Theme(
+                                    data: Theme.of(context).copyWith(
+                                        dividerColor: Colors.transparent),
+                                    child: Container(
+                                      color: AppColor.textfield_color,
+                                      child: ExpansionTile(
+                                        title: AccountSettingController
+                                                .seviziItemAdded.isNotEmpty
+                                            ? Wrap(
+                                                children:
+                                                    AccountSettingController
+                                                        .seviziItemAdded
+                                                        .map((e) {
+                                                  return Text(
+                                                    "${e.toString()}, ",
+                                                    style: subTitle16BlackStyle,
+                                                  );
+                                                }).toList(),
+                                              )
+                                            : Text(
+                                                "Sevizi",
+                                                style: hint_text,
+                                              ),
+                                        children: [
+                                          Container(
+                                            height: 15,
+                                            color: Colors.white,
+                                          ),
+                                          ListView.builder(
+                                            physics:
+                                                const NeverScrollableScrollPhysics(),
+                                            shrinkWrap: true,
+                                            itemCount: AccountSettingController
+                                                .seviziList.length,
+                                            itemBuilder: (context, index) {
+                                              return checkListTile(
+                                                  checkValue: AccountSettingController
+                                                      .seviziItemAdded
+                                                      .contains(
+                                                          AccountSettingController
+                                                                  .seviziList[
+                                                              index]),
+                                                  titleText:
+                                                      AccountSettingController
+                                                          .seviziList[index],
+                                                  onChanged:
+                                                      AccountSettingController
+                                                                  .isEdit ==
+                                                              true
+                                                          ? (p0) {
+                                                              if (p0 == true) {
+                                                                AccountSettingController
+                                                                    .seviziItemAdded
+                                                                    .add(AccountSettingController
+                                                                            .seviziList[
+                                                                        index]);
+                                                              } else {
+                                                                AccountSettingController
+                                                                    .seviziItemAdded
+                                                                    .remove(AccountSettingController
+                                                                            .seviziList[
+                                                                        index]);
+                                                              }
+
+                                                              setState(() {});
+                                                            }
+                                                          : null);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ))),
+                            Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                child: Theme(
+                                    data: Theme.of(context).copyWith(
+                                        dividerColor: Colors.transparent),
+                                    child: Container(
+                                      color: AppColor.textfield_color,
+                                      child: ExpansionTile(
                                           title: AccountSettingController
-                                                  .seviziItemAdded.isNotEmpty
+                                                  .campiItemAdded.isNotEmpty
                                               ? Wrap(
                                                   children:
                                                       AccountSettingController
-                                                          .seviziItemAdded
+                                                          .campiItemAdded
                                                           .map((e) {
                                                     return Text(
                                                       "${e.toString()}, ",
@@ -373,7 +449,7 @@ class _AccountSettingViewState extends State<AccountSettingView> {
                                                   }).toList(),
                                                 )
                                               : Text(
-                                                  "Sevizi",
+                                                  "Campi",
                                                   style: hint_text,
                                                 ),
                                           children: [
@@ -387,18 +463,19 @@ class _AccountSettingViewState extends State<AccountSettingView> {
                                               shrinkWrap: true,
                                               itemCount:
                                                   AccountSettingController
-                                                      .seviziList.length,
+                                                      .campiList.length,
                                               itemBuilder: (context, index) {
                                                 return checkListTile(
-                                                    checkValue: AccountSettingController
-                                                        .seviziItemAdded
-                                                        .contains(
-                                                            AccountSettingController
-                                                                    .seviziList[
-                                                                index]),
+                                                    checkValue:
+                                                        AccountSettingController
+                                                            .campiItemAdded
+                                                            .contains(
+                                                                AccountSettingController
+                                                                        .campiList[
+                                                                    index]),
                                                     titleText:
                                                         AccountSettingController
-                                                            .seviziList[index],
+                                                            .campiList[index],
                                                     onChanged:
                                                         AccountSettingController
                                                                     .isEdit ==
@@ -407,15 +484,15 @@ class _AccountSettingViewState extends State<AccountSettingView> {
                                                                 if (p0 ==
                                                                     true) {
                                                                   AccountSettingController
-                                                                      .seviziItemAdded
+                                                                      .campiItemAdded
                                                                       .add(AccountSettingController
-                                                                              .seviziList[
+                                                                              .campiList[
                                                                           index]);
                                                                 } else {
                                                                   AccountSettingController
-                                                                      .seviziItemAdded
+                                                                      .campiItemAdded
                                                                       .remove(AccountSettingController
-                                                                              .seviziList[
+                                                                              .campiList[
                                                                           index]);
                                                                 }
 
@@ -423,471 +500,365 @@ class _AccountSettingViewState extends State<AccountSettingView> {
                                                               }
                                                             : null);
                                               },
-                                            ),
-                                          ],
-                                        ),
-                                      ))),
-                              Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                  child: Theme(
-                                      data: Theme.of(context).copyWith(
-                                          dividerColor: Colors.transparent),
-                                      child: Container(
-                                        color: AppColor.textfield_color,
-                                        child: ExpansionTile(
-                                            title: AccountSettingController
-                                                    .campiItemAdded.isNotEmpty
-                                                ? Wrap(
-                                                    children:
-                                                        AccountSettingController
-                                                            .campiItemAdded
-                                                            .map((e) {
-                                                      return Text(
-                                                        "${e.toString()}, ",
-                                                        style:
-                                                            subTitle16BlackStyle,
-                                                      );
-                                                    }).toList(),
-                                                  )
-                                                : Text(
-                                                    "Campi",
-                                                    style: hint_text,
-                                                  ),
-                                            children: [
-                                              Container(
-                                                height: 15,
-                                                color: Colors.white,
-                                              ),
-                                              ListView.builder(
-                                                physics:
-                                                    const NeverScrollableScrollPhysics(),
-                                                shrinkWrap: true,
-                                                itemCount:
-                                                    AccountSettingController
-                                                        .campiList.length,
-                                                itemBuilder: (context, index) {
-                                                  return checkListTile(
-                                                      checkValue: AccountSettingController
-                                                          .campiItemAdded
-                                                          .contains(
-                                                              AccountSettingController
-                                                                      .campiList[
-                                                                  index]),
-                                                      titleText:
-                                                          AccountSettingController
-                                                              .campiList[index],
-                                                      onChanged:
-                                                          AccountSettingController
-                                                                      .isEdit ==
-                                                                  true
-                                                              ? (p0) {
-                                                                  if (p0 ==
-                                                                      true) {
-                                                                    AccountSettingController
-                                                                        .campiItemAdded
-                                                                        .add(AccountSettingController
-                                                                            .campiList[index]);
-                                                                  } else {
-                                                                    AccountSettingController
-                                                                        .campiItemAdded
-                                                                        .remove(
-                                                                            AccountSettingController.campiList[index]);
-                                                                  }
-
-                                                                  setState(
-                                                                      () {});
-                                                                }
-                                                              : null);
-                                                },
-                                              )
-                                            ]),
-                                      ))),
-                            ],
+                                            )
+                                          ]),
+                                    ))),
+                          ],
+                        ),
+                      if (AccountSettingController.roleRadioAccount !=
+                          RoleName.club)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: 10,
                           ),
-                        if (AccountSettingController.roleRadioAccount !=
-                            RoleName.club)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: 10,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  context.loc.gender,
-                                  style: hint_text,
-                                ),
-                                AccountSettingController.gender == "" ||
-                                        BaseHelper.user?.gender == ""
-                                    ? Row(
-                                        children: [
-                                          CustomRadioButton(
-                                              val: AccountSettingController
-                                                  .gender,
-                                              value: "M",
-                                              text: 'M',
-                                              onChanged:
-                                                  AccountSettingController
-                                                          .isEdit
-                                                      ? ((value) async {
-                                                          AccountSettingController
-                                                              .gender = "M";
-                                                          setState(() {});
-                                                        })
-                                                      : null),
-                                          CustomRadioButton(
-                                              val: AccountSettingController
-                                                  .gender,
-                                              value: "F",
-                                              text: 'F',
-                                              onChanged:
-                                                  AccountSettingController
-                                                          .isEdit
-                                                      ? ((value) async {
-                                                          AccountSettingController
-                                                              .gender = "F";
-                                                          setState(() {});
-                                                        })
-                                                      : null)
-                                        ],
-                                      )
-                                    : AccountSettingController.gender == 'M' &&
-                                            BaseHelper.user?.gender != ""
-                                        ? CustomRadioButton(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                context.loc.gender,
+                                style: hint_text,
+                              ),
+                              AccountSettingController.gender == "" ||
+                                      BaseHelper.user?.gender == ""
+                                  ? Row(
+                                      children: [
+                                        CustomRadioButton(
                                             val:
                                                 AccountSettingController.gender,
                                             value: "M",
                                             text: 'M',
-                                            onChanged: ((value) async {}))
-                                        : CustomRadioButton(
+                                            onChanged:
+                                                AccountSettingController.isEdit
+                                                    ? ((value) async {
+                                                        AccountSettingController
+                                                            .gender = "M";
+                                                        setState(() {});
+                                                      })
+                                                    : null),
+                                        CustomRadioButton(
                                             val:
                                                 AccountSettingController.gender,
                                             value: "F",
                                             text: 'F',
-                                            onChanged: ((value) async {}))
-                              ],
-                            ),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 5, bottom: 30),
-                          child: Column(
-                            children: [
-                              if (AccountSettingController.roleRadioAccount !=
-                                  RoleName.club)
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text("Federazione ranking",
-                                        style: text_color),
-                                    Row(
-                                      children: [
-                                        CustomRadioButton(
-                                            val: AccountSettingController
-                                                .rankingRadioAccount,
-                                            value: 'Yes',
-                                            text: 'Yes',
-                                            onChanged: AccountSettingController
-                                                        .isEdit ==
-                                                    true
-                                                ? (value) {
-                                                    BaseHelper.hideKeypad(
-                                                        context);
-
-                                                    setState(() {
-                                                      AccountSettingController
-                                                          .federationRankAccount = "";
-                                                      AccountSettingController
-                                                              .rankingRadioAccount =
-                                                          value!;
-                                                    });
-                                                  }
-                                                : null),
-                                        CustomRadioButton(
-                                            val: AccountSettingController
-                                                .rankingRadioAccount,
-                                            value: 'No',
-                                            text: 'No',
-                                            onChanged: AccountSettingController
-                                                        .isEdit ==
-                                                    true
-                                                ? (value) {
-                                                    BaseHelper.hideKeypad(
-                                                        context);
-
-                                                    setState(() {
-                                                      AccountSettingController
-                                                              .rankingRadioAccount =
-                                                          value!;
-                                                    });
-                                                    popup(
-                                                      context,
-                                                    ).then((valu) {
-                                                      if (valu.toString() ==
-                                                          "") {
+                                            onChanged:
+                                                AccountSettingController.isEdit
+                                                    ? ((value) async {
                                                         AccountSettingController
-                                                            .federationRankAccount = "";
-                                                        AccountSettingController
-                                                            .rankingRadioAccount = "";
-                                                      } else {
-                                                        AccountSettingController
-                                                                .federationRankAccount =
-                                                            valu.toString();
-                                                      }
-
-                                                      setState(() {});
-                                                    });
-                                                  }
-                                                : null),
+                                                            .gender = "F";
+                                                        setState(() {});
+                                                      })
+                                                    : null)
                                       ],
-                                    ),
-                                  ],
-                                ),
-                              if (AccountSettingController
-                                          .rankingRadioAccount ==
-                                      "Yes" &&
-                                  AccountSettingController.roleRadioAccount !=
-                                      RoleName.club)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 15, bottom: 2),
-                                  child: TextFields(
-                                    controller: federationLinkAccountController,
-                                    validator: (p0) =>
-                                        Validators.urlValidate(p0),
-                                    text: 'Link',
-                                  ),
-                                ),
-                              if (AccountSettingController
-                                          .federationRankAccount !=
-                                      '' &&
-                                  AccountSettingController.roleRadioAccount !=
-                                      RoleName.club)
-                                AccountSettingController.rankingRadioAccount !=
-                                        "Yes"
-                                    ? Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Container(
-                                          margin:
-                                              const EdgeInsets.only(top: 15),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 20, vertical: 5),
-                                          decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              color: AppColor.hinttext_color
-                                                  .withOpacity(0.5)),
-                                          child: Text(
-                                            AccountSettingController
-                                                .federationRankAccount
-                                                .toString(),
-                                            style: title20BlackStyle,
-                                          ),
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          Text(context.loc.federationRanking,
-                                              style: text_color),
-                                          CustomSizedBox(
-                                            width: width * 0.05,
-                                          ),
-                                          Text(
-                                            AccountSettingController
-                                                .federationRankAccount
-                                                .toString(),
-                                            style: title20BlackStyle,
-                                          )
-                                        ],
-                                      ),
+                                    )
+                                  : AccountSettingController.gender == 'M' &&
+                                          BaseHelper.user?.gender != ""
+                                      ? CustomRadioButton(
+                                          val: AccountSettingController.gender,
+                                          value: "M",
+                                          text: 'M',
+                                          onChanged: ((value) async {}))
+                                      : CustomRadioButton(
+                                          val: AccountSettingController.gender,
+                                          value: "F",
+                                          text: 'F',
+                                          onChanged: ((value) async {}))
+                            ],
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5, bottom: 30),
+                        child: Column(
+                          children: [
+                            if (AccountSettingController.roleRadioAccount !=
+                                RoleName.club)
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text("Role", style: text_color),
-                                  ButtonWidget(
-                                    btnColor: AccountSettingController
-                                                .roleRadioAccount ==
-                                            BaseHelper.user?.role
-                                        ? null
-                                        : AppColor.refusecolor,
-                                    circularRadius: 20,
-                                    style: normal14BlackStyle.copyWith(
-                                        color: AppColor.textcolor),
-                                    text: AccountSettingController
-                                                .roleRadioAccount ==
-                                            RoleName.none
-                                        ? "Choose your role"
-                                        : AccountSettingController
-                                            .roleRadioAccount.name,
-                                    onPressed: () async {
-                                      AccountSettingController.isEdit == true
-                                          ? await showModalBottomSheet(
-                                              backgroundColor: Colors
-                                                  .transparent,
-                                              context: context,
-                                              builder: (context) =>
-                                                  RoleSelectionSheet(
-                                                      roleRadioAccount:
-                                                          AccountSettingController
-                                                              .roleRadioAccount,
-                                                      roleRadioAccountList:
-                                                          RoleName
-                                                              .values)).then(
-                                              (value) {
-                                              if (value != null) {
-                                                setState(() {});
-                                                AccountSettingController
-                                                    .roleRadioAccount = value;
-                                              }
-                                            })
-                                          : BaseHelper.showSnackBar(
-                                              context, "Allow to Edit");
-                                    },
-                                  )
+                                  Text("Federazione ranking",
+                                      style: text_color),
+                                  Row(
+                                    children: [
+                                      CustomRadioButton(
+                                          val: AccountSettingController
+                                              .rankingRadioAccount,
+                                          value: 'Yes',
+                                          text: 'Yes',
+                                          onChanged:
+                                              AccountSettingController.isEdit ==
+                                                      true
+                                                  ? (value) {
+                                                      BaseHelper.hideKeypad(
+                                                          context);
+
+                                                      setState(() {
+                                                        AccountSettingController
+                                                            .federationRankAccount = "";
+                                                        AccountSettingController
+                                                                .rankingRadioAccount =
+                                                            value!;
+                                                      });
+                                                    }
+                                                  : null),
+                                      CustomRadioButton(
+                                          val: AccountSettingController
+                                              .rankingRadioAccount,
+                                          value: 'No',
+                                          text: 'No',
+                                          onChanged: AccountSettingController
+                                                      .isEdit ==
+                                                  true
+                                              ? (value) {
+                                                  BaseHelper.hideKeypad(
+                                                      context);
+
+                                                  setState(() {
+                                                    AccountSettingController
+                                                            .rankingRadioAccount =
+                                                        value!;
+                                                  });
+                                                  popup(
+                                                    context,
+                                                  ).then((valu) {
+                                                    if (valu.toString() == "") {
+                                                      AccountSettingController
+                                                          .federationRankAccount = "";
+                                                      AccountSettingController
+                                                          .rankingRadioAccount = "";
+                                                    } else {
+                                                      AccountSettingController
+                                                              .federationRankAccount =
+                                                          valu.toString();
+                                                    }
+
+                                                    setState(() {});
+                                                  });
+                                                }
+                                              : null),
+                                    ],
+                                  ),
                                 ],
                               ),
-                            ],
-                          ),
+                            if (AccountSettingController.rankingRadioAccount ==
+                                    "Yes" &&
+                                AccountSettingController.roleRadioAccount !=
+                                    RoleName.club)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 15, bottom: 2),
+                                child: TextFieldss(
+                                  focusNode: linkFocusNode,
+                                  controller: federationLinkAccountController,
+                                  validator: (p0) => Validators.urlValidate(p0),
+                                  text: 'Link',
+                                ),
+                              ),
+                            if (AccountSettingController
+                                        .federationRankAccount !=
+                                    '' &&
+                                AccountSettingController.roleRadioAccount !=
+                                    RoleName.club)
+                              AccountSettingController.rankingRadioAccount !=
+                                      "Yes"
+                                  ? Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Container(
+                                        margin: const EdgeInsets.only(top: 15),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 20, vertical: 5),
+                                        decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            color: AppColor.hinttext_color
+                                                .withOpacity(0.5)),
+                                        child: Text(
+                                          AccountSettingController
+                                              .federationRankAccount
+                                              .toString(),
+                                          style: title20BlackStyle,
+                                        ),
+                                      ),
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text(context.loc.federationRanking,
+                                            style: text_color),
+                                        CustomSizedBox(
+                                          width: width * 0.05,
+                                        ),
+                                        Text(
+                                          AccountSettingController
+                                              .federationRankAccount
+                                              .toString(),
+                                          style: title20BlackStyle,
+                                        )
+                                      ],
+                                    ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("Role", style: text_color),
+                                ButtonWidget(
+                                  btnColor: AccountSettingController
+                                              .roleRadioAccount ==
+                                          BaseHelper.user?.role
+                                      ? null
+                                      : AppColor.refusecolor,
+                                  circularRadius: 20,
+                                  style: normal14BlackStyle.copyWith(
+                                      color: AppColor.textcolor),
+                                  text: AccountSettingController
+                                              .roleRadioAccount ==
+                                          RoleName.none
+                                      ? "Choose your role"
+                                      : AccountSettingController
+                                          .roleRadioAccount.name,
+                                  onPressed: () async {
+                                    AccountSettingController.isEdit == true
+                                        ? await showModalBottomSheet(
+                                            backgroundColor: Colors.transparent,
+                                            context: context,
+                                            builder: (context) =>
+                                                RoleSelectionSheet(
+                                                    roleRadioAccount:
+                                                        AccountSettingController
+                                                            .roleRadioAccount,
+                                                    roleRadioAccountList:
+                                                        RoleName.values)).then(
+                                            (value) {
+                                            if (value != null) {
+                                              setState(() {});
+                                              AccountSettingController
+                                                  .roleRadioAccount = value;
+                                            }
+                                          })
+                                        : BaseHelper.showSnackBar(
+                                            context, "Allow to Edit");
+                                  },
+                                )
+                              ],
+                            ),
+                          ],
                         ),
-                        CustomListTileButton(
-                            // color: AppColor.buttonnewcolor,
-                            height: height * 0.05,
-                            width: width * 0.8,
-                            text: AccountSettingController.isEdit == true
-                                ? "Update"
-                                : "Back",
-                            ontap: () {
-                              if (widget.willPopValue == false) {
-                                if (BaseHelper.currentUser?.providerData.first
-                                        .providerId
-                                        .toString() ==
-                                    'apple.com') {
-                                  if (!formKey.currentState!.validate()) {
-                                    return;
-                                  } else {
-                                    AccountSettingController.updateUserData(
-                                        context,
-                                        federationLinkAccountController:
-                                            federationLinkAccountController
-                                                .text,
-                                        federationRankAccount:
-                                            AccountSettingController
-                                                .federationRankAccount,
-                                        gender: AccountSettingController.gender,
-                                        imageFile:
-                                            AccountSettingController.imageFile,
-                                        nameController: nameController.text,
-                                        passwordController:
-                                            passwordController.text,
-                                        rankingRadioAccount:
-                                            AccountSettingController
-                                                .rankingRadioAccount,
-                                        roleRadioAccount: AccountSettingController
-                                            .roleRadioAccount,
-                                        address: addressController.text,
-                                        campList: AccountSettingController
-                                            .campiItemAdded,
-                                        email: emailController.text
-                                            .toLowerCase()
-                                            .trim(),
-                                        seviziList: AccountSettingController
-                                            .seviziItemAdded,
-                                        dob: dobController.text);
-                                  }
-                                }
-                                AccountSettingController.updateUserData(context,
-                                    federationLinkAccountController:
-                                        federationLinkAccountController.text,
-                                    federationRankAccount:
-                                        AccountSettingController
-                                            .federationRankAccount,
-                                    gender: AccountSettingController.gender,
-                                    imageFile:
-                                        AccountSettingController.imageFile,
-                                    nameController: nameController.text,
-                                    passwordController: passwordController.text,
-                                    rankingRadioAccount:
-                                        AccountSettingController
-                                            .rankingRadioAccount,
-                                    roleRadioAccount: AccountSettingController
-                                        .roleRadioAccount,
-                                    address: addressController.text,
-                                    campList:
-                                        AccountSettingController.campiItemAdded,
-                                    email: emailController.text
-                                        .toLowerCase()
-                                        .trim(),
-                                    seviziList: AccountSettingController
-                                        .seviziItemAdded,
-                                    dob: dobController.text);
-                              } else if (emailController.text !=
-                                      BaseHelper.user?.email ||
-                                  AccountSettingController.imageFile != '' ||
-                                  AccountSettingController.gender !=
-                                      BaseHelper.user?.gender ||
-                                  !listEquals(
-                                      BaseHelper.user?.campi,
-                                      AccountSettingController
-                                          .campiItemAdded) ||
-                                  !listEquals(
-                                      BaseHelper.user?.serviz,
-                                      AccountSettingController
-                                          .seviziItemAdded) ||
-                                  nameController.text !=
-                                      BaseHelper.user?.name ||
-                                  emailController.text !=
-                                      BaseHelper.user?.email ||
-                                  passwordController.text !=
-                                      BaseHelper.user?.password ||
-                                  dobController.text != BaseHelper.user?.dob ||
-                                  cityController.text !=
-                                      BaseHelper.user?.city ||
-                                  AccountSettingController
-                                          .rankingRadioAccount !=
-                                      BaseHelper.user?.isFederationRanking ||
-                                  AccountSettingController
-                                          .federationRankAccount !=
-                                      BaseHelper.user?.federationRanking ||
-                                  AccountSettingController.roleRadioAccount !=
-                                      BaseHelper.user?.role ||
-                                  federationLinkAccountController.text !=
-                                      BaseHelper.user?.federationLink) {
-                                AccountSettingController.updateUserData(context,
-                                    federationLinkAccountController:
-                                        federationLinkAccountController.text,
-                                    federationRankAccount:
-                                        AccountSettingController
-                                            .federationRankAccount,
-                                    gender: AccountSettingController.gender,
-                                    imageFile:
-                                        AccountSettingController.imageFile,
-                                    nameController: nameController.text,
-                                    passwordController: passwordController.text,
-                                    rankingRadioAccount:
-                                        AccountSettingController
-                                            .rankingRadioAccount,
-                                    roleRadioAccount: AccountSettingController
-                                        .roleRadioAccount,
-                                    address: addressController.text,
-                                    campList:
-                                        AccountSettingController.campiItemAdded,
-                                    email: emailController.text
-                                        .toLowerCase()
-                                        .trim(),
-                                    seviziList: AccountSettingController
-                                        .seviziItemAdded,
-                                    dob: dobController.text);
+                      ),
+                      CustomListTileButton(
+                        // color: AppColor.buttonnewcolor,
+                        height: height * 0.05,
+                        width: width * 0.8,
+                        text: AccountSettingController.isEdit == true
+                            ? "Update"
+                            : "Back",
+                        ontap: () {
+                          if (!widget.willPopValue) {
+                            if (BaseHelper
+                                    .currentUser?.providerData.first.providerId
+                                    .toString() ==
+                                'apple.com') {
+                              if (!formKey.currentState!.validate()) {
+                                return;
                               } else {
-                                Navigator.maybePop(context);
+                                AccountSettingController.updateUserData(context,
+                                    federationLinkAccountController:
+                                        federationLinkAccountController.text,
+                                    federationRankAccount:
+                                        AccountSettingController
+                                            .federationRankAccount,
+                                    gender: AccountSettingController.gender,
+                                    imageFile:
+                                        AccountSettingController.imageFile,
+                                    nameController: nameController.text,
+                                    passwordController: passwordController.text,
+                                    rankingRadioAccount:
+                                        AccountSettingController
+                                            .rankingRadioAccount,
+                                    roleRadioAccount: AccountSettingController
+                                        .roleRadioAccount,
+                                    address: addressController.text,
+                                    campList:
+                                        AccountSettingController.campiItemAdded,
+                                    email: emailController.text
+                                        .toLowerCase()
+                                        .trim(),
+                                    seviziList: AccountSettingController
+                                        .seviziItemAdded,
+                                    dob: dobController.text);
                               }
-                            }),
-                      ],
-                    );
-            }),
+                            }
+                            AccountSettingController.updateUserData(context,
+                                federationLinkAccountController:
+                                    federationLinkAccountController.text,
+                                federationRankAccount: AccountSettingController
+                                    .federationRankAccount,
+                                gender: AccountSettingController.gender,
+                                imageFile: AccountSettingController.imageFile,
+                                nameController: nameController.text,
+                                passwordController: passwordController.text,
+                                rankingRadioAccount: AccountSettingController
+                                    .rankingRadioAccount,
+                                roleRadioAccount:
+                                    AccountSettingController.roleRadioAccount,
+                                address: addressController.text,
+                                campList:
+                                    AccountSettingController.campiItemAdded,
+                                email:
+                                    emailController.text.toLowerCase().trim(),
+                                seviziList:
+                                    AccountSettingController.seviziItemAdded,
+                                dob: dobController.text);
+                          } else if (emailController.text !=
+                                  BaseHelper.user?.email ||
+                              AccountSettingController.imageFile != '' ||
+                              AccountSettingController.gender !=
+                                  BaseHelper.user?.gender ||
+                              !listEquals(BaseHelper.user?.campi,
+                                  AccountSettingController.campiItemAdded) ||
+                              !listEquals(BaseHelper.user?.serviz,
+                                  AccountSettingController.seviziItemAdded) ||
+                              nameController.text != BaseHelper.user?.name ||
+                              emailController.text != BaseHelper.user?.email ||
+                              passwordController.text !=
+                                  BaseHelper.user?.password ||
+                              dobController.text != BaseHelper.user?.dob ||
+                              cityController.text != BaseHelper.user?.city ||
+                              AccountSettingController.rankingRadioAccount !=
+                                  BaseHelper.user?.isFederationRanking ||
+                              AccountSettingController.federationRankAccount !=
+                                  BaseHelper.user?.federationRanking ||
+                              AccountSettingController.roleRadioAccount !=
+                                  BaseHelper.user?.role ||
+                              federationLinkAccountController.text !=
+                                  BaseHelper.user?.federationLink) {
+                            AccountSettingController.updateUserData(context,
+                                federationLinkAccountController:
+                                    federationLinkAccountController.text,
+                                federationRankAccount: AccountSettingController
+                                    .federationRankAccount,
+                                gender: AccountSettingController.gender,
+                                imageFile: AccountSettingController.imageFile,
+                                nameController: nameController.text,
+                                passwordController: passwordController.text,
+                                rankingRadioAccount: AccountSettingController
+                                    .rankingRadioAccount,
+                                roleRadioAccount:
+                                    AccountSettingController.roleRadioAccount,
+                                address: addressController.text,
+                                campList:
+                                    AccountSettingController.campiItemAdded,
+                                email:
+                                    emailController.text.toLowerCase().trim(),
+                                seviziList:
+                                    AccountSettingController.seviziItemAdded,
+                                dob: dobController.text);
+                          } else {
+                            Navigator.maybePop(context);
+                          }
+                        },
+                      ),
+                    ],
+                  );
+          },
+        ),
       ),
     );
   }
