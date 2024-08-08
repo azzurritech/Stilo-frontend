@@ -1,28 +1,18 @@
 import 'dart:developer';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_wanna_play_app/utils/enums.dart';
 import 'package:flutter_wanna_play_app/utils/extensions.dart';
-
-
-
-
 import '../../../controller/search_controller.dart';
 import '../../../firebase/firebase_methods.dart';
-
 import '../../../helper/basehelper.dart';
-
 import '../../../model/user_model.dart';
 import '../../../utils/constant/colors.dart';
 import '../../../utils/constant/heading_text_style.dart';
-
 import '../../../widgets/app_bar_widget.dart';
-
 import '../../../widgets/custom_container.dart';
 import '../../../widgets/search_listview_widget.dart';
 import '../../../widgets/textfield_widget.dart';
-
 
 class SearchView extends StatefulWidget {
   const SearchView({
@@ -83,7 +73,7 @@ class _SearchViewState extends State<SearchView>
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
+    // final width = MediaQuery.of(context).size.width;
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBarWidget(
@@ -115,28 +105,16 @@ class _SearchViewState extends State<SearchView>
                 labelColor: Colors.black,
                 unselectedLabelColor: Colors.grey,
                 isScrollable: true,
-                tabs:  [
-                  Text(
-                    context.loc.all,
-                  ),
-                  Text(
-                   context.loc.coach,
-                  ),
-                  Text(
-                    context.loc.player,
-                  ),
-                  Text(
-                    context.loc.club,
-                  ),
+                tabs: [
+                  Text(context.loc.all),
+                  Text(context.loc.coach),
+                  Text(context.loc.player),
+                  Text(context.loc.club),
                   Text(context.loc.paddle),
                   Text(context.loc.physiotherapist)
                 ]),
           ),
-          const Divider(
-            height: 20,
-            thickness: 3,
-            color: AppColor.maincolor,
-          ),
+          const Divider(height: 20, thickness: 3, color: AppColor.maincolor),
           Expanded(
             child: TabBarView(
               controller: tabcontrolller,
@@ -159,7 +137,7 @@ class _SearchViewState extends State<SearchView>
                         if (query != null && query != "") {
                           querFunc();
                         }
-                        if (doc?.isEmpty??false) {
+                        if (doc?.isEmpty ?? false) {
                           return Center(
                             child: Text(
                               "No record found",
@@ -188,7 +166,7 @@ class _SearchViewState extends State<SearchView>
                             fromFirestore: UserModel.fromFireStore,
                             toFirestore: (UserModel user, options) =>
                                 user.toFireStore())
-                        .where('role', isEqualTo:'coach')
+                        .where('role', isEqualTo: 'coach')
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
@@ -200,10 +178,10 @@ class _SearchViewState extends State<SearchView>
                         if (query != null && query != "") {
                           querFunc();
                         }
-                        if (doc?.isEmpty??false) {
+                        if (doc?.isEmpty ?? false) {
                           return Center(
                             child: Text(
-                             context.loc.norecordfound,
+                              context.loc.norecordfound,
                               style: heading22BlackStyle,
                             ),
                           );
@@ -244,10 +222,10 @@ class _SearchViewState extends State<SearchView>
                         if (query != null && query != "") {
                           querFunc();
                         }
-                        if (doc?.isEmpty??false) {
+                        if (doc?.isEmpty ?? false) {
                           return Center(
                             child: Text(
-                             context.loc.norecordfound,
+                              context.loc.norecordfound,
                               style: heading22BlackStyle,
                             ),
                           );
@@ -284,7 +262,7 @@ class _SearchViewState extends State<SearchView>
                         if (query != null && query != "") {
                           querFunc();
                         }
-                        if (doc?.isEmpty??false) {
+                        if (doc?.isEmpty ?? false) {
                           return Center(
                             child: Text(
                               context.loc.norecordfound,
@@ -312,7 +290,7 @@ class _SearchViewState extends State<SearchView>
                             fromFirestore: UserModel.fromFireStore,
                             toFirestore: (UserModel user, options) =>
                                 user.toFireStore())
-                        .where('role', isEqualTo: 'Paddle')
+                        .where('role', isEqualTo: 'paddle')
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
@@ -324,10 +302,10 @@ class _SearchViewState extends State<SearchView>
                         if (query != null && query != "") {
                           querFunc();
                         }
-                        if (doc?.isEmpty??false) {
+                        if (doc?.isEmpty ?? false) {
                           return Center(
                             child: Text(
-                             context.loc.norecordfound,
+                              context.loc.norecordfound,
                               style: heading22BlackStyle,
                             ),
                           );
@@ -352,7 +330,7 @@ class _SearchViewState extends State<SearchView>
                             fromFirestore: UserModel.fromFireStore,
                             toFirestore: (UserModel user, options) =>
                                 user.toFireStore())
-                        .where('role', isEqualTo: 'Fisioterapista')
+                        .where('role', isEqualTo: 'physiotherapist')
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
@@ -364,10 +342,10 @@ class _SearchViewState extends State<SearchView>
                         if (query != null && query != "") {
                           querFunc();
                         }
-                        if (doc?.isEmpty??false) {
+                        if (doc?.isEmpty ?? false) {
                           return Center(
                             child: Text(
-                             context.loc.norecordfound,
+                              context.loc.norecordfound,
                               style: heading22BlackStyle,
                             ),
                           );
@@ -405,8 +383,7 @@ class _SearchViewState extends State<SearchView>
             isPremiumAcc: users?.isPremiumAcc ?? false,
             ontap: () async {
               doc?[index].data()?.role == RoleName.club
-                  ? await 
-                  GeneralSearchController.selectedClub(
+                  ? await GeneralSearchController.selectedClub(
                       context, doc?[index].data()?.email ?? '')
                   : await GeneralSearchController.chechkFriend(
                       context, doc?[index].data()?.email ?? '');
@@ -416,7 +393,7 @@ class _SearchViewState extends State<SearchView>
             imagee: users?.profilePhoto ?? '',
             titletext: users?.name ?? "",
             subtitle: users?.city ?? "",
-            role:users?.role  ,
+            role: users?.role,
             ratingValue:
                 double.tryParse(users?.federationRanking ?? '0.0') ?? 0.0,
           );

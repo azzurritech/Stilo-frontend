@@ -156,7 +156,8 @@ class _AccountSettingViewState extends State<AccountSettingView> {
     // Allow editing for traditional email sign-up users
     return providerId != 'facebook.com' &&
         providerId != 'google.com' &&
-        providerId != 'apple.com';
+        providerId != 'apple.com' &&
+        AccountSettingController.isEdit;
   }
 
   @override
