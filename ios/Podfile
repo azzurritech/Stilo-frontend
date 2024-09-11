@@ -1,8 +1,5 @@
-# Uncomment this line to define a global platform for your project
 platform :ios, '14.0'
 
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
-# source 'https://github.com/CocoaPods/Specs.git'
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
@@ -33,9 +30,10 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-  # target 'RunnerTests' do
-  #   inherit! :search_paths
-  # end
+
+  # Add Google Maps and Google Places pods
+  pod 'GoogleMaps'
+  pod 'GooglePlaces'
 end
 
 post_install do |installer|

@@ -1,4 +1,4 @@
-import 'package:device_preview/device_preview.dart';
+// import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -40,10 +40,7 @@ Future main() async {
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-  ]).then((value) => runApp(DevicePreview(
-      enabled: false,
-      builder: (context) =>
-          ProviderScope(child: HomePage(appLocale: localDbLang)))));
+  ]).then((value) => runApp(ProviderScope(child: HomePage(appLocale: localDbLang))));
 }
 
 @pragma('vm:entry-point')
