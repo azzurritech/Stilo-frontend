@@ -97,18 +97,18 @@ class _HomePageViewState extends State<HomePageView>
         appBar: AppBarWidget(
           title: context.loc.home,
           background: AppColor.divivdercolor,
-          action: [
-            IconButton(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const PremiumAccount(),
-                  ));
-                },
-                icon: const Icon(
-                  Icons.arrow_circle_up_outlined,
-                  size: 29,
-                ))
-          ],
+          // action: [
+          //   IconButton(
+          //       onPressed: () {
+          //         Navigator.of(context).push(MaterialPageRoute(
+          //           builder: (context) => const PremiumAccount(),
+          //         ));
+          //       },
+          //       icon: const Icon(
+          //         Icons.arrow_circle_up_outlined,
+          //         size: 29,
+          //       ))
+          // ],
         ),
         body: SingleChildScrollView(
           child: Column(

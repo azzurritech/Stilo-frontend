@@ -1,8 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_wanna_play_app/Controller/home_page_controller.dart';
+import 'package:flutter_wanna_play_app/Firebase/firebase_methods.dart';
 import 'package:flutter_wanna_play_app/controller/language_change_controller.dart';
+import 'package:flutter_wanna_play_app/helper/basehelper.dart';
 import 'package:flutter_wanna_play_app/utils/extensions.dart';
+import 'package:flutter_wanna_play_app/view/splash_/welcome_view.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:share_plus/share_plus.dart';
 
@@ -252,6 +260,36 @@ class _AppSettingsViewState extends ConsumerState<AppSettingsView> {
             CustomSizedBox(
               height: height * 0.03,
             ),
+            CustomListTileButton(
+                style: subTitle16lightGreenstyle,
+                height: height * 0.06,
+                width: width * 0.8,
+                color: AppColor.maincolor,
+                text: 'Delete Account',
+                ontap: () async{
+                  EasyLoading.show();
+
+    if (BaseHelper.currentUser?.providerData.first.providerId.toString() ==
+        'google.com') {
+      await GoogleSignIn().signOut();
+    } else if (BaseHelper.currentUser?.providerData.first.providerId
+            .toString() ==
+        'facebook.com') {
+      await FacebookAuth.instance.logOut();
+    }
+    await FirebaseMethod.updateData({"device_token": ""});
+    await HomePageController.setStatus('Offline');
+    await FirebaseAuth.instance.signOut();
+
+    BaseHelper.user = null;
+    BaseHelper.currentUser = BaseHelper.auth.currentUser;
+    EasyLoading.dismiss();
+    BaseHelper.showSnackBar(context, "Delete Successfully");
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const WelcomeView()),
+      (route) => false,
+    );
+                }),
             CustomListTileButton(
                 style: subTitle16lightGreenstyle,
                 height: height * 0.06,

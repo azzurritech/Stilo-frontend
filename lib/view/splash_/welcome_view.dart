@@ -54,7 +54,7 @@ class _WelcomeViewState extends State<WelcomeView> {
                   }
                 }
 
-                return SizedBox.shrink();
+                return const SizedBox.shrink();
               } else if (!snapshot.hasData) {
                 return Container(
                   decoration: const BoxDecoration(
@@ -105,31 +105,51 @@ class _WelcomeViewState extends State<WelcomeView> {
                           height: height * 0.04,
                         ),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Container(width: 100,color: Colors.black,height: 2),
+                            const Text('OR'),
+                            Container(width: 100,color: Colors.black,height: 2),
+
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (Platform.isIOS)
-                              Transform.scale(
-                                scale: 1.5,
-                                child: InkWell(
+                            InkWell(
                                   onTap: () async {
                                     Auth.signInWithApple(context);
                                   },
-                                  child: SizedBox(
-                                      // color: Colors.red,
-                                      // height: 60,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      
+                                      
+                                      boxShadow: [const BoxShadow( blurRadius: 2, offset: Offset(0, 2), color: Colors.black)] , borderRadius: BorderRadius.circular(20),  color: Colors.white,),
+                                  
+                                      height: 60,
                                       width: 70,
                                       // margin: const EdgeInsets.only(right: 10),
                                       child: Image.asset(
                                         AppAssets.appleLogo,
                                         fit: BoxFit.cover,
+                                           height: 60,
+                                      width: 70,
                                       )),
                                 ),
-                              ),
+                            SizedBox(width:5),
+
                             InkWell(
                               onTap: () async {
                                 await Auth.signInFacebbok(context);
                               },
                               child: Container(
+                                 decoration: BoxDecoration(boxShadow: [const BoxShadow( blurRadius: 2, offset: Offset(0, 2), color: Colors.black)] , color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                                      
+                                      height: 60,
+                                      width: 70,
                                   margin: const EdgeInsets.only(right: 10),
                                   child: Image.asset(AppAssets.facebookIcon)),
                             ),
@@ -141,6 +161,10 @@ class _WelcomeViewState extends State<WelcomeView> {
                                 Auth.signInGoogle(context);
                               },
                               child: Container(
+                                 decoration: BoxDecoration(boxShadow: [const BoxShadow( blurRadius: 2, offset: Offset(0, 2), color: Colors.black)] , borderRadius: BorderRadius.circular(20),  color: Colors.white,),
+                                    
+                                      height: 60,
+                                      width: 70,
                                   margin: const EdgeInsets.only(right: 10),
                                   child: Image.asset(AppAssets.googleIcon)),
                             )

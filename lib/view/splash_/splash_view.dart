@@ -12,7 +12,7 @@ import '../../helper/basehelper.dart';
 import '../../utils/constant/image_path.dart';
 
 class SplashView extends ConsumerStatefulWidget {
-  const SplashView({super.key});
+  const  SplashView({super.key});
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _SplashViewState();
