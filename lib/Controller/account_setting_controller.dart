@@ -158,5 +158,3 @@ class AccountSettingController {
     return;
   }
 }
-
-// dkfdhfk
